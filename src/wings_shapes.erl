@@ -30,6 +30,7 @@ menu() ->
 	     {sphere,Opt},
 	     {cone,Opt},
 	     separator,
+         {hexahedron,Opt},
 	     {tetrahedron,Opt},
 	     {octahedron,Opt},
 	     {octotoad, Opt},
@@ -53,6 +54,7 @@ prim_trans(K) when is_atom(K) ->
     {prim_name(K),K,prim_help(K)};
 prim_trans(Other) -> Other.
 
+prim_name(hexahedron) ->  ?STR(prim_name,hexahedron,"Hexahedron");
 prim_name(tetrahedron) ->  ?STR(prim_name,tetrahedron,"Tetrahedron");
 prim_name(octahedron) ->   ?STR(prim_name,octahedron,"Octahedron");
 prim_name(octotoad) ->     ?STR(prim_name,octotoad,"Octotoad");
@@ -65,6 +67,8 @@ prim_name(light) ->        ?STR(prim_name,light,"Light");
 prim_name(material) ->     ?STR(prim_name,material,"Material...");
 prim_name(image) ->        ?STR(prim_name,image,"Image...").
 
+prim_help(hexahedron) ->
+    ?STR(prim_help,hexahedron,"Create a hexahedron");
 prim_help(tetrahedron) ->
     ?STR(prim_help,tetrahedron,"Create a tetrahedron");
 prim_help(octahedron) ->
@@ -89,6 +93,8 @@ prim_help(image) ->
     ?STR(prim_help,image,"Create an image...").
 
 
+
+command({hexahedron,Ask}, St) -> hexahedron(Ask, St);
 command({tetrahedron,Ask}, St) -> tetrahedron(Ask, St);
 command({octahedron,Ask}, St) -> octahedron(Ask, St);
 command({octotoad,Ask}, St) -> octotoad(Ask, St);
@@ -105,6 +111,29 @@ build_shape(Prefix, Fs, Vs, #st{onext=Oid}=St) ->
     We = wings_we:build(Fs, Vs),
     Name = Prefix++integer_to_list(Oid),
     wings_obj:new(Name, We, St).
+
+hexahedron(Ask, St) when is_atom(Ask) ->
+    Q = [{label_column, [
+	    {?STR(hexahedron,1,"Edge Length"), {text, 2.0,[{range,{0.0,infinity}}]}}]
+	 },
+	 transform_obj_dlg()],
+  ask(hexahedron, Ask, Q, St);
+hexahedron([L|Transf], St) ->
+    Xi = L/2.0,
+    Hp = sqrt(3.0),
+    Li = Xi*Hp,
+    Zi = Xi/Hp,
+    Yi = L * sqrt(2.0/3.0),
+    Yf = Yi / 3.0,
+
+    Fs = [[2,1,0],[1,2,3],[1,3,0],[3,2,0]],
+    Vs0 = [{ 0.0,  Yi-Yf,  0.0},
+	   { 0.0, -Yf,   Li-Zi},
+	   { -Xi, -Yf,     -Zi},
+	   {  Xi, -Yf,     -Zi}],
+    %% The string below is intentionally not translated.
+    Vs = transform_obj(Transf, Vs0),
+    build_shape("hexahedron", Fs, Vs, St).
 
 tetrahedron(Ask, St) when is_atom(Ask) ->
     Q = [{label_column, [
