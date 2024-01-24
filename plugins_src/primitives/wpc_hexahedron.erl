@@ -86,16 +86,11 @@ hexahedron_dialog() ->
     ].
 
 hexahedron_verts(Nres) ->
-    S = 1.0,
-    Nverts = plane_verts(Nres),
-    Tverts = [{X, S, Z} || {X,Z} <- Nverts],
-    Bverts = [{X, -S, -Z} || {X,Z} <- Nverts],
-    Fverts = [{X, -Z, S} || {X,Z} <- Nverts],
-    Kverts = [{-X, -Z, -S} || {X,Z} <- Nverts],
-    Rverts = [{ S, -X, Z} || {X,Z} <- Nverts],
-    Lverts = [{-S,  X, Z} || {X,Z} <- Nverts],
-    VertsWithDups = Tverts ++ Bverts ++ Fverts ++ Kverts ++ Rverts ++ Lverts,
-    VertsWithDups.
+    A = math:sqrt(1.0/8.0*Nres),
+    B = math:sqrt(1.0/4.0),
+    C = 0.0,
+    Verts = [{C, A, B}, {C, A, -B}, {-B, -A, C}, {B, -A, C}],
+    Verts.
 
 transform_mesh(false, Box, Vs) ->
     [transform(Box,V) || V <- Vs];
@@ -106,33 +101,8 @@ transform({Xs,Ys,Zs}, {Xp,Yp,Zp}) ->
     {Xp*Xs, Yp*Ys, Zp*Zs}.
 
 hexahedron_faces(Nres, Nres) ->
-    Nsq = Nres*Nres,
-    Tfaces = plane_faces(Nres, Nres),
-    Bfaces = side_faces(Nsq*1, Tfaces),
-    Ffaces = side_faces(Nsq*2, Tfaces),
-    Kfaces = side_faces(Nsq*3, Tfaces),
-    Rfaces = side_faces(Nsq*4, Tfaces),
-    Lfaces = side_faces(Nsq*5, Tfaces),
-    Faces = Tfaces ++ Bfaces ++ Ffaces ++ Kfaces ++ Rfaces ++ Lfaces,
+    Faces = [[0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]],
     Faces.
-
-side_faces(Offset, Faces) ->
-    AddOffset = fun([A,B,C,D]) -> [A+Offset,B+Offset,C+Offset,D+Offset] end,
-    lists:map(AddOffset, Faces).
-
-plane_verts(Nres) ->
-    [{dtc_round((I/(Nres-1)*2-1)), dtc_round((J/(Nres-1)*2-1))}
-      || I <- lists:seq(0, Nres-1), J <- lists:seq(0, Nres-1)].
-
-plane_faces(Ures, Vres) ->
-    [[I*Vres+J, I*Vres+J+1, (I+1)*Vres+J+1, (I+1)*Vres+J]
-      || I <- lists:seq(0, Vres-2), J <- lists:seq(0, Ures-2)].
-
-dtc_round(Float) ->
-    dtc_round(Float, 6).
-
-dtc_round(Float, Decimals) -> % Accurately rounds decimals - www.digithings.com
-    (round(Float * math:pow(10, Decimals))) / math:pow(10, Decimals).
 
 % =============
 % === N-Gon ===
