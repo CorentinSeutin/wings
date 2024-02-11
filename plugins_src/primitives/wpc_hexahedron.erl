@@ -13,6 +13,7 @@
 -module(wpc_hexahedron).
 -export([init/0,menu/2,command/2]).
 -import(math, [cos/1,sin/1,pi/0]).
+-import(search_in_file, [search_polygon_parameters/2])
 -include_lib("wings/src/wings.hrl").
 
 init() -> true.
@@ -43,7 +44,15 @@ hexahedron_str() ->
 make_hexahedron(Arg, St) when is_atom(Arg) ->
     wings_dialog:dialog_preview({shape,hexahedron}, Arg, ?__(1,"Hexahedron Options"),
 				hexahedron_dialog(), St);
+
 make_hexahedron(Arg, _) ->
+    F_name = "./Polyhedra.obj",
+    {ok, F} = file:open(F_name, [read]),
+    Poly_parameters = search_polygon_parameters(F,F_name),
+    file:close(F),
+    %TODO: Récupérer les Vertices, Faces et les mettre
+    %dans Verts et Faces
+
     % set_pref(Arg),	% don't save
     ArgDict = dict:from_list(Arg),
     Nres = dict:fetch(nres, ArgDict),
