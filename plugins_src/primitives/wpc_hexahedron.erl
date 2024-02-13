@@ -90,6 +90,7 @@ hexahedron_dialog() ->
     ].
 
 hexahedron_verts(Nres) ->
+    Nres = 1,
     A = math:sqrt(1.0/8.0*Nres),
     B = math:sqrt(1.0/4.0),
     C = 0.0,
