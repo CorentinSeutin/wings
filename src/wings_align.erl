@@ -228,7 +228,6 @@ unitize_obj(We) ->
     [Min,Max] = wings_vertex:bounding_box(We),
     Size = e3d_vec:sub(Max, Min),
     Center = e3d_vec:average(Min, Max),
-    Scale = 2.0 / e3d_vec:len(Size),
     Scale =  e3d_vec:len({2.0,2.0,2.0}) / e3d_vec:len(Size),
     LocMat = e3d_mat:translate(e3d_vec:neg(Center)),
     SizMat = e3d_mat:scale(Scale), 
