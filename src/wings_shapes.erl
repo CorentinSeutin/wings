@@ -30,7 +30,7 @@ menu() ->
 	     {sphere,Opt},
 	     {cone,Opt},
 	     separator,
-         {hexahedron,Opt},
+         {hexahedron,Opt}, %Menu du bas
 	     {tetrahedron,Opt},
 	     {octahedron,Opt},
 	     {octotoad, Opt},
@@ -133,7 +133,7 @@ hexahedron([L|Transf], St) ->
 	   {  Xi, -Yf,     -Zi}],
     %% The string below is intentionally not translated.
     Vs = transform_obj(Transf, Vs0),
-    build_shape("hexahedron", Fs, Vs, St).
+    build_shape("tetrahedron", Fs, Vs, St).
 
 tetrahedron(Ask, St) when is_atom(Ask) ->
     Q = [{label_column, [

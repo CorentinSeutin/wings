@@ -90,7 +90,6 @@ hexahedron_dialog() ->
     ].
 
 hexahedron_verts(Nres) ->
-    Nres = 1,
     A = math:sqrt(1.0/8.0*Nres),
     B = math:sqrt(1.0/4.0),
     C = 0.0,
@@ -106,7 +105,7 @@ transform({Xs,Ys,Zs}, {Xp,Yp,Zp}) ->
     {Xp*Xs, Yp*Ys, Zp*Zs}.
 
 hexahedron_faces(Nres, Nres) ->
-    Faces = [[0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]],
+    Faces = [[2,1,0],[1,2,3],[1,3,0],[3,2,0]],
     Faces.
 
 % =============
