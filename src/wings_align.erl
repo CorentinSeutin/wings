@@ -218,7 +218,7 @@ put_obj_on_ground(We) ->
     wings_we:transform_vs(Matrix, We).
 
 %% @doc Scale selected object(s) uniformly until it's bounding box fits
-%% inside a sphere of radius 1.0, and move object to origin
+%% inside a cube going from the coordinates {-1,-1,-1} to {1,1,1} centered at the origin
 %% @spec unitize(St::st#) -> St# ?
 unitize(St) ->
     wings_sel:map(fun(_, We) -> unitize_obj(We) end, St).
@@ -227,7 +227,8 @@ unitize_obj(We) when ?IS_LIGHT(We) -> We;
 unitize_obj(We) ->
     [Min,Max] = wings_vertex:bounding_box(We),
 
-    {X,Y,Z} = e3d_vec:sub(Max, Min), %Size
+    % Size -> size of the cube enclosing We
+    {X,Y,Z} = e3d_vec:sub(Max, Min),
     if 
         Y < Z, X < Z -> Size = {Z,Z,Z};
         X < Y -> Size = {Y,Y,Y};
