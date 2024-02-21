@@ -295,7 +295,6 @@ cleanup_1([_|Opts], We) ->
 cleanup_1([], We) -> We.
 
 clean_isolated_vertices(We) ->
-    io:format("CLEANUP :The value is: ~p.", [We]),
     case wings_vertex:isolated(We) of
 	[] -> We;
 	[_]=Isolated ->

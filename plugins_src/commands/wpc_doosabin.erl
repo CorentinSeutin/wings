@@ -17,10 +17,6 @@
 
 -include_lib("wings/src/wings.hrl").
 
-%%-include_lib("wings/src/wings_body.erl").
-
-%%-import(wings_body, [clean_isolated_vertices/1]).
-
 init() ->
     true.
 
@@ -81,8 +77,6 @@ doo_sabin(#we{es=Etab0}=We0) ->
     AllFaces = gb_sets:from_ordset(gb_trees:keys(Ftab)),
     ScaleFaces = gb_sets:intersection(ScaleFaces0, AllFaces),
     CornerEdges = wings_edge:from_faces(ScaleFaces, We5),
-
-    %%io:format("DOSABIN : The value is: ~p.", [We5]),
 
     %% Return updated #we{} and selection.
     {wings_body:clean_isolated_vertices(We5),CornerEdges}.
