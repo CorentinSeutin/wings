@@ -34,7 +34,7 @@ menu() ->
 	     %{tetrahedron,Opt},
 	     %{octahedron,Opt},
 	     {octotoad, Opt},
-	     {dodecahedron,Opt},
+	     %{dodecahedron,Opt},
 	     %{icosahedron,Opt},
 	     separator,
 	     {grid,Opt},
