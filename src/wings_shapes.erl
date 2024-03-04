@@ -30,12 +30,8 @@ menu() ->
 	     {sphere,Opt},
 	     {cone,Opt},
 	     separator,
-         {polyhedron,Opt}, %Menu du bas
-	     %{tetrahedron,Opt},
-	     %{octahedron,Opt},
+         {polyhedron,Opt},
 	     {octotoad, Opt},
-	     %{dodecahedron,Opt},
-	     %{icosahedron,Opt},
 	     separator,
 	     {grid,Opt},
 	     separator,
