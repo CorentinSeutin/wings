@@ -1,48 +1,102 @@
 -module(polyhedron_test).
 
-%-compile({parse_transform, tools}).
 -include_lib("eunit/include/eunit.hrl").
-%-include_lib("../src/wings.hrl").
 -export([go/0]).
--import(wpc_polyhedron, [compare_min_max/2]).
+-import(polyhedron_aux, [compare_min_max/2,find_min_max/2,normalize/1]).
 
 go() -> start().
 
 start() ->
-    ?assert(
-        compare_min_max_test()
-    ).
+    [
+        compare_min_max_test(),
+        find_min_max_test()%,
+        %normalize_test()
+    ].
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 compare_min_max_test() ->
-    ?assert(
-        ( 
-            compare_min_max_one_test() andalso
-            compare_min_max_two_test() andalso
-            compare_min_max_three_test() 
-        ) =:= ok
-    ).
+    [
+        "compare_min_max_tests",
+        compare_min_max_one_test(),
+        compare_min_max_two_test(),
+        compare_min_max_three_test()    
+    ].
+
+find_min_max_test() ->
+    [
+        "find_min_max_tests",
+        find_min_max_one_test(),
+        find_min_max_two_test(),
+        find_min_max_three_test(), 
+        find_min_max_four_test()   
+    ].
+
+normalize_test() ->
+    [
+        "normalize_tests",
+        normalize_one_test()
+    ].
 
 %%%%%%%%%%%%%%%%%%%compare_min_max tests%%%%%%%%%%%%%%%%%%%
-%Max should be replaced
 compare_min_max_one_test() -> 
-    ?assert(
-        wpc_polyhedron:compare_min_max({1,2,3},[{0,0,0},{0,0,0}]) =:= 
-        [{0,0,0},{1,2,3}]
+    ?assertEqual(
+        [{0,0,0},{1,2,3}],
+        polyhedron_aux:compare_min_max({1,2,3},[{0,0,0},{0,0,0}]),
+        "Test: should replace the maximum"
     ).
 
-%Min should be replaced
 compare_min_max_two_test() -> 
-    ?assert(
-        wpc_polyhedron:compare_min_max({1,2,3},[{4,4,4},{4,4,4}]) =:= 
-        [{1,2,3},{4,4,4}]
+    ?assertEqual(
+        [{1,2,3},{4,4,4}],
+        polyhedron_aux:compare_min_max({1,2,3},[{4,4,4},{4,4,4}]),
+        "Test: should replace the minimum"
     ).
 
-%Min and Max should not be replaced
 compare_min_max_three_test() -> 
-    ?assert(
-        wpc_polyhedron:compare_min_max({0.5,0.5,0.5},[{0,0,0},{1,1,1}]) =:= 
-        [{0,0,0},{1,1,1}]
+    ?assertEqual(
+        [{0,0,0},{1,1,1}],
+        polyhedron_aux:compare_min_max({0.5,0.5,0.5},[{0,0,0},{1,1,1}]),
+        "Test: should change nothing"
     ).
 
-%Compilation line : 
-    %erl -pa ../plugins_src/primitives/
+%%%%%%%%%%%%%%%%%%%find_min_max tests%%%%%%%%%%%%%%%%%%%
+find_min_max_one_test() -> 
+    L = [{-1,-2,-3},{0.5,0.5,0.5},{1,2,3}],
+    ?assertEqual(
+        [{-1,-2,-3},{1,2,3}],
+        polyhedron_aux:find_min_max(L,[{0,0,0},{0,0,0}]),
+        "Test: should find the two extremum"
+    ).
+
+find_min_max_two_test() -> 
+    L = [{0.5,0.5,0.5},{1,2,3}],
+    ?assertEqual(
+        [{0,0,0},{1,2,3}],
+        polyhedron_aux:find_min_max(L,[{0,0,0},{0,0,0}]),
+        "Test: should find the maximum"
+    ).
+
+find_min_max_three_test() -> 
+    L = [{-1,-2,-3},{-0.5,-0.5,-0.5}],
+    ?assertEqual(
+        [{-1,-2,-3},{0,0,0}],
+        polyhedron_aux:find_min_max(L,[{0,0,0},{0,0,0}]),
+        "Test: should find the minimum"
+    ).
+
+find_min_max_four_test() -> 
+    L = [{-0.5,-0.5,-0.5},{0.5,0.5,0.5}],
+    ?assertEqual(
+        [{-1,-2,-3},{1,2,3}],
+        polyhedron_aux:find_min_max(L,[{-1,-2,-3},{1,2,3}]),
+        "Test: should change nothing"
+    ).
+
+%%%%%%%%%%%%%%%%%%%normalize tests%%%%%%%%%%%%%%%%%%%
+normalize_one_test() -> 
+    Vrs = [{-3,-3,-3},{-3,-3,3},{-3,3,-3},{-3,3,3},{3,-3,-3},{3,-3,3},{3,3,-3},{3,3,3}],
+    ?assertEqual(
+        [{-1,-1,-1},{-1,-1,1},{-1,1,-1},{-1,1,1},{1,-1,-1},{1,-1,1},{1,1,-1},{1,1,1}],
+        polyhedron_aux:normalize(Vrs),
+        "Test: should normalize the cube"
+    ).
