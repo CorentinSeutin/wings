@@ -436,7 +436,14 @@ circle_pick_all_setup_1(Edges, #we{vp=Vtab}=We, State, RayV, Center, Axis) ->
     Ray0 = e3d_vec:sub(intersect_vec_plane(Pos, Center, Axis), Center),
     Len = e3d_vec:len(Ray0),
     Ray = e3d_vec:norm(Ray0),
-    VertDegList = degrees_from_static_ray(Vs, Vtab, none, none, Center, []),
+    {Nx,Ny,Nz} = e3d_vec:cross(Ray,Axis),
+    io:format("Nx: ~p, Ny: ~p, Nz: ~p~n", [Nx, Ny, Nz]),
+    PlaneEquation =
+        fun({X,Y,Z}) ->
+            Nx*X + Ny*Y + Nz*Z
+        end,
+    io:format("PE: ~p~n", [PlaneEquation({0,0,0})]),
+    VertDegList = degrees_from_static_ray(Vs, Vtab, none, none, PlaneEquation, Center, []),
     Data = {Center,Ray,Len,Axis,VertDegList},
     Tv = {Vs,make_circular_fun(Data, State)},
     We#we{temp=Tv}.
@@ -451,7 +458,14 @@ circle_setup_1([Vs0|Groups], #we{vp=Vtab}=We, Plane, State, Acc0) ->
     %Deg = 360.0/length(Vs),
     {Pos,NearestVpos,_} = get_radius(Vs, Center, Axis, Vtab, 0.0, 0.0, raypos, lastpos, firstpos, 0.0, index),
     Ray = e3d_vec:norm_sub(Pos, Center),
-    VertDegList = degrees_from_static_ray(Vs, Vtab, none, none, Center, []),
+    {Nx,Ny,Nz} = e3d_vec:cross(Ray,Axis),
+    io:format("Nx: ~p, Ny: ~p, Nz: ~p~n", [Nx, Ny, Nz]),
+    PlaneEquation =
+        fun({X,Y,Z}) ->
+            Nx*X + Ny*Y + Nz*Z
+        end,
+    io:format("PE: ~p~n", [PlaneEquation({0,0,0})]),
+    VertDegList = degrees_from_static_ray(Vs, Vtab, none, none, PlaneEquation, Center, []),
     Data = {Center,Ray,NearestVpos,Axis,VertDegList},
     Acc = [{Vs,make_circular_fun(Data, State)}|Acc0],
     circle_setup_1(Groups, We, Plane, State, Acc).
@@ -593,23 +607,28 @@ len_sqrt({X,Y,Z}) ->
 %%%% Return a tuple list [{Vert, Degrees}] of all the vertices
 %%%% in the edge loop in ccw order and the number of degrees it
 %%%% will be rotated around the center point from the stable ray.
-degrees_from_static_ray([], _, _, _, _, DegList) ->
+degrees_from_static_ray([], _, _, _, _, _, DegList) ->
     DegList;
-degrees_from_static_ray([Vert|Vs], Vtab, none, none, Center, DegList) ->
+degrees_from_static_ray([Vert|Vs], Vtab, none, none, PlaneEquation, Center, DegList) ->
     Degrees = 0.0,
     Vpos = array:get(Vert, Vtab),
-    degrees_from_static_ray(Vs, Vtab, Vert, Degrees, Center, [{Vert,{Vpos,Degrees}}|DegList]);
+    degrees_from_static_ray(Vs, Vtab, Vert, Degrees, Center, PlaneEquation, [{Vert,{Vpos,Degrees}}|DegList]);
 
-degrees_from_static_ray([Vert|Vs], Vtab, Vs0, _, Center, DegList) ->
+degrees_from_static_ray([Vert|Vs], Vtab, Vs0, _, Center, PlaneEquation, DegList) ->
     DistV0Vi = e3d_vec:dist(array:get(Vert, Vtab), array:get(Vs0,Vtab)),
     DistV0C = e3d_vec:dist(Center, array:get(Vs0,Vtab)),
     DistViC = e3d_vec:dist(array:get(Vert, Vtab), Center),
 
     io:format("Center: ~p, Dist: ~p~n", [Center, DistV0Vi]),
     CosAlpha = (DistV0C*DistV0C + DistViC*DistViC - DistV0Vi*DistV0Vi)/(2*DistV0C*DistViC),
-    Degrees = math:acos(CosAlpha) * 360 / math:pi(),
+    Res = PlaneEquation(array:get(Vert, Vtab)),
+    if
+        Res < 0 -> Degrees = ( 2*math:pi() - math:acos(CosAlpha) ) * 180 / math:pi();
+        Res =:= 0 -> Degrees = math:pi();
+        true -> Degrees = math:acos(CosAlpha) * 180 / math:pi()
+    end,
     Vpos = array:get(Vert, Vtab),
-    degrees_from_static_ray(Vs, Vtab, Vs0, Degrees, Center, [{Vert,{Vpos,Degrees}}|DegList]).
+    degrees_from_static_ray(Vs, Vtab, Vs0, Degrees, Center, PlaneEquation, [{Vert,{Vpos,Degrees}}|DegList]).
 
 circularise_units({_, _, relative}) ->
     [diametric_factor,skip,percent];
