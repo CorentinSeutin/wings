@@ -437,7 +437,7 @@ circle_pick_all_setup_1(Edges, #we{vp=Vtab}=We, State, RayV, Center, Axis) ->
     Len = e3d_vec:len(Ray0),
     Ray = e3d_vec:norm(Ray0),
     {Nx,Ny,Nz} = e3d_vec:cross(Ray,Axis),
-    io:format("Nx: ~p, Ny: ~p, Nz: ~p~n", [Nx, Ny, Nz]),
+    %io:format("Nx: ~p, Ny: ~p, Nz: ~p~n", [Nx, Ny, Nz]),
     PlaneEquation =
         fun({X,Y,Z}) ->
             Nx*X + Ny*Y + Nz*Z
@@ -611,6 +611,7 @@ degrees_from_static_ray([], _, _, _, _, _, DegList) ->
     DegList;
 degrees_from_static_ray([Vert|Vs], Vtab, none, none, PlaneEquation, Center, DegList) ->
     Degrees = 0.0,
+    io:format("FirstVert: ~p~n", [array:get(Vert,Vtab)]),
     Vpos = array:get(Vert, Vtab),
     degrees_from_static_ray(Vs, Vtab, Vert, Degrees, Center, PlaneEquation, [{Vert,{Vpos,Degrees}}|DegList]);
 
@@ -619,15 +620,17 @@ degrees_from_static_ray([Vert|Vs], Vtab, Vs0, _, Center, PlaneEquation, DegList)
     DistV0C = e3d_vec:dist(Center, array:get(Vs0,Vtab)),
     DistViC = e3d_vec:dist(array:get(Vert, Vtab), Center),
 
-    io:format("Center: ~p, Dist: ~p~n", [Center, DistV0Vi]),
     CosAlpha = (DistV0C*DistV0C + DistViC*DistViC - DistV0Vi*DistV0Vi)/(2*DistV0C*DistViC),
     Res = PlaneEquation(array:get(Vert, Vtab)),
+    %D = PlaneEquation(Center),
+    io:format("Res: ~p, D: ~p~n", [Res, 0]),
     if
-        Res < 0 -> Degrees = ( 2*math:pi() - math:acos(CosAlpha) ) * 180 / math:pi();
-        Res =:= 0 -> Degrees = math:pi();
+        Res < 0 -> Degrees = (2 * math:pi() - math:acos(CosAlpha) ) * 180 / math:pi();
+        Res =:= 0 -> Degrees = 0;
         true -> Degrees = math:acos(CosAlpha) * 180 / math:pi()
     end,
     Vpos = array:get(Vert, Vtab),
+    io:format("Degree: ~p~n", [Degrees]),
     degrees_from_static_ray(Vs, Vtab, Vs0, Degrees, Center, PlaneEquation, [{Vert,{Vpos,Degrees}}|DegList]).
 
 circularise_units({_, _, relative}) ->
