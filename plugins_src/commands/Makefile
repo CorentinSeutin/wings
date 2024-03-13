@@ -60,7 +60,6 @@ MODULES= \
 	wpc_sel_win \
 	wpc_shear \
 	wpc_shift \
-	wpc_smooth \
 	wpc_sweep_extrude \
 	wpc_turnedge \
 	wpc_untriangulate \
