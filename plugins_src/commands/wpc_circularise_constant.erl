@@ -1,5 +1,5 @@
 %%
-%%  wpc_circularise.erl --
+%%  wpc_circularise_constant.erl --
 %%
 %%    Plugin to flatten, equalise, and inflate open or closed edge loops
 %%    making them circular.
@@ -11,7 +11,7 @@
 %%
 %%
 
--module(wpc_circularise_tmp_name).
+-module(wpc_circularise_constant).
 -export([init/0,menu/2,command/2]).
 -include_lib("wings/src/wings.hrl").
 
@@ -36,28 +36,28 @@ parse([Elem|Rest], NewMenu, Mode, Found) ->
     parse(Rest, [Elem|NewMenu], Mode, Found).
 
 circular_arc_menu(edge) ->
-    Name = ?__(1,"Circularise TMP NAME"),
-    Help = {?__(2,"Flatten, equalise, and inflate selected edge loops making them circular"),
+    Name = ?__(1,"Circularise (Constant)"),
+    Help = {?__(2,"Flatten and inflate selected edge loops making them circular, without equalising"),
        ?__(6,"Specify using secondary selections"),
        ?__(5,"Choose common plane to which loops will be flattened")},
     F = fun
-      (1,_Ns) -> {edge,circularise_tmp};
-      (2,_Ns) -> {edge,circularise_tmp_center};
-      (3,_Ns) -> {edge,{circularise_tmp,{'ASK',[plane]}}}
+      (1,_Ns) -> {edge,circularise_const};
+      (2,_Ns) -> {edge,circularise_const_center};
+      (3,_Ns) -> {edge,{circularise_const,{'ASK',[plane]}}}
     end,
     {Name, {circular, F}, Help, []};
 circular_arc_menu({auv,edge}) ->
-    {?__(1,"Circularise TMP NAME"),circularise_tmp,
-     ?__(2,"Flatten, equalise, and inflate selected edge loops making them circular")}.
+    {?__(1,"Circularise (Constant)"),circularise_const,
+     ?__(2,"Flatten and inflate selected edge loops making them circular, without equalising")}.
 
 %%%% Commands
-command({Mode,circularise_tmp}, St) when Mode =:= edge; Mode =:= {auv,edge} ->
+command({Mode,circularise_const}, St) when Mode =:= edge; Mode =:= {auv,edge} ->
     process_circ_cmd(find_plane, St);
-command({edge,{circularise_tmp,Plane}}, St) ->
+command({edge,{circularise_const,Plane}}, St) ->
     process_circ_cmd(Plane, St);
-command({edge, circularise_tmp_center}, St) ->
+command({edge, circularise_const_center}, St) ->
     process_cc_cmd(none, St);
-command({edge,{circularise_tmp_center,Data}}, St) ->
+command({edge,{circularise_const_center,Data}}, St) ->
     process_cc_cmd(Data, St);
 command(_, _) ->
     next.
@@ -428,23 +428,20 @@ circle_pick_all_setup(RayV, Center, Axis0, St0) ->
     DF = fun(_, #we{temp=Tv}) -> Tv end,
     wings_drag:fold(DF, circularise_units(State), Flags, St).
 
-circle_pick_all_setup_1(Edges, #we{vp=Vtab}=We, State, RayV, Center, Axis) ->
+get_rays([], _, _, _, RayList) ->
+    RayList;
+get_rays([Vert|Vs], Vtab, Center, Axis, RayList) ->
+    Vpos = array:get(Vert, Vtab),
+    Ray0 = e3d_vec:sub(intersect_vec_plane(Vpos, Center, Axis), Center),
+    Nearest = e3d_vec:len(Ray0),
+    Ray = e3d_vec:norm(Ray0),
+    get_rays(Vs, Vtab, Center, Axis, [{Vert,{Vpos,Ray,Nearest}}|RayList]).
+
+circle_pick_all_setup_1(Edges, #we{vp=Vtab}=We, State, _, Center, Axis) ->
     [Vs0] = wings_edge_loop:edge_loop_vertices(Edges, We),
     Vs = check_vertex_order(Vs0, Axis, wings_face:face_normal_cw(Vs0, Vtab)),
-    %Deg = (360.0/length(Vs)),
-    {Pos,_} = find_stable_point(Vs, RayV, Vtab, 0.0),
-    Ray0 = e3d_vec:sub(intersect_vec_plane(Pos, Center, Axis), Center),
-    Len = e3d_vec:len(Ray0),
-    Ray = e3d_vec:norm(Ray0),
-    {Nx,Ny,Nz} = e3d_vec:cross(Ray,Axis),
-    %io:format("Nx: ~p, Ny: ~p, Nz: ~p~n", [Nx, Ny, Nz]),
-    PlaneEquation =
-        fun({X,Y,Z}) ->
-            Nx*X + Ny*Y + Nz*Z
-        end,
-    io:format("PE: ~p~n", [PlaneEquation({0,0,0})]),
-    VertDegList = degrees_from_static_ray(Vs, Vtab, none, none, PlaneEquation, Center, []),
-    Data = {Center,Ray,Len,Axis,VertDegList},
+    VertRayList = get_rays(Vs, Vtab, Center, Axis, []), 
+    Data = {Center,Axis,VertRayList},
     Tv = {Vs,make_circular_fun(Data, State)},
     We#we{temp=Tv}.
 
@@ -455,18 +452,8 @@ circle_setup_1([Vs0|Groups], #we{vp=Vtab}=We, Plane, State, Acc0) ->
     Axis = circle_plane(Plane, CwNorm),
     Vs = check_vertex_order(Vs0, Axis, CwNorm),
     Center = wings_vertex:center(Vs, We),
-    %Deg = 360.0/length(Vs),
-    {Pos,NearestVpos,_} = get_radius(Vs, Center, Axis, Vtab, 0.0, 0.0, raypos, lastpos, firstpos, 0.0, index),
-    Ray = e3d_vec:norm_sub(Pos, Center),
-    {Nx,Ny,Nz} = e3d_vec:cross(Ray,Axis),
-    io:format("Nx: ~p, Ny: ~p, Nz: ~p~n", [Nx, Ny, Nz]),
-    PlaneEquation =
-        fun({X,Y,Z}) ->
-            Nx*X + Ny*Y + Nz*Z
-        end,
-    io:format("PE: ~p~n", [PlaneEquation({0,0,0})]),
-    VertDegList = degrees_from_static_ray(Vs, Vtab, none, none, PlaneEquation, Center, []),
-    Data = {Center,Ray,NearestVpos,Axis,VertDegList},
+    VertRayList = get_rays(Vs, Vtab, Center, Axis, []),
+    Data = {Center,Axis,VertRayList},
     Acc = [{Vs,make_circular_fun(Data, State)}|Acc0],
     circle_setup_1(Groups, We, Plane, State, Acc).
 
@@ -520,118 +507,15 @@ circle_plane(find_plane, CwNorm) ->
     e3d_vec:neg(CwNorm);
 circle_plane(Plane, _) -> Plane.
 
-%%%% Return the Pos and Index of the stable point chosen by the user
-find_stable_point([Va|_], {Va,Vb}, Vtab, Index) ->
-    VposA = array:get(Va, Vtab),
-    VposB = array:get(Vb, Vtab),
-    Pos = e3d_vec:average(VposA, VposB),
-    {Pos,Index+1.5};
-find_stable_point([Vb|_], {Va,Vb}, Vtab, Index) ->
-    VposA = array:get(Va, Vtab),
-    VposB = array:get(Vb, Vtab),
-    Pos = e3d_vec:average(VposA, VposB),
-    {Pos,Index+1.5};
-find_stable_point([_|Vs], {Va,Vb}, Vtab, Index) ->
-    find_stable_point(Vs, {Va,Vb}, Vtab, Index+1);
-
-find_stable_point([RayV|_], RayV, Vtab, Index) ->
-    Pos = array:get(RayV, Vtab),
-    {Pos,Index+1};
-find_stable_point([_|Vs], RayV, Vtab, Index) ->
-    find_stable_point(Vs, RayV, Vtab, Index+1).
-
-
-%%%% Return the Index and Position of the Vertex or midpoint between adjacent
-%%%% vertices closeest to the Center. Distance calculation is made after the
-%%%% point in question is flattened to the relevant Plane.
-get_radius([], Center, _, _, RayLen0, NearestVert, Pos, LastPos, FirstPos, AtIndex, Index) ->
-    HalfPos = e3d_vec:average(LastPos, FirstPos),
-    HalfDist = len_sqrt(e3d_vec:sub(HalfPos, Center)),
-    case HalfDist < RayLen0 of
-      true -> {HalfPos, math:sqrt(NearestVert), AtIndex+0.5};
-      false -> {Pos, math:sqrt(NearestVert), Index}
-    end;
-
-get_radius([Vert|Vs], Center, Plane, Vtab, 0.0, 0.0, _Pos, _LastPos, _FirstPos, AtIndex, _Index) ->
-    Pos = array:get(Vert, Vtab),
-    RayPos = intersect_vec_plane(Pos, Center, Plane),
-    Dist = len_sqrt(e3d_vec:sub(RayPos, Center)),
-    get_radius(Vs, Center, Plane, Vtab, Dist, Dist, RayPos, Pos, Pos, AtIndex+1.0, AtIndex+1.0);
-
-get_radius([Vert|Vs], Center, Plane, Vtab, RayLen0, NearestVert0, RayPos0, LastPos0, FirstPos, AtIndex0, Index0) ->
-    Pos = array:get(Vert, Vtab),
-    LastPos = intersect_vec_plane(Pos, Center, Plane),
-    HalfPos = e3d_vec:average(LastPos, LastPos0),
-    FullDist = len_sqrt(e3d_vec:sub(LastPos, Center)),
-    HalfDist = len_sqrt(e3d_vec:sub(HalfPos, Center)),
-    AtIndex = AtIndex0+1.0,
-    case FullDist < HalfDist of
-      true ->
-        case ((FullDist < RayLen0) andalso (FullDist > 0.0)) of
-          true ->
-            RayLen = FullDist,
-            NearestVert = FullDist,
-            RayPos = LastPos,
-            Index = AtIndex;
-          false ->
-            RayLen = RayLen0,
-            NearestVert = NearestVert0,
-            RayPos = RayPos0,
-            Index = Index0
-        end;
-      false ->
-        case ((HalfDist < RayLen0) andalso (HalfDist > 0.0)) of
-          true ->
-            RayLen = HalfDist,
-            NearestVert = case FullDist < NearestVert0 of
-              true -> FullDist;
-              false -> NearestVert0
-            end,
-            RayPos = HalfPos,
-            Index = AtIndex0+0.5;
-          false ->
-            RayLen = RayLen0,
-            NearestVert = case FullDist < NearestVert0 of
-              true -> FullDist;
-              false -> NearestVert0
-            end,
-            RayPos = RayPos0,
-            Index = Index0
-        end
-    end,
-    get_radius(Vs, Center, Plane, Vtab, RayLen, NearestVert, RayPos, LastPos, FirstPos, AtIndex, Index).
-
-len_sqrt({X,Y,Z}) ->
-    X*X+Y*Y+Z*Z.
-
 %%%% Return a tuple list [{Vert, Degrees}] of all the vertices
 %%%% in the edge loop in ccw order and the number of degrees it
 %%%% will be rotated around the center point from the stable ray.
-degrees_from_static_ray([], _, _, _, _, _, DegList) ->
-    DegList;
-degrees_from_static_ray([Vert|Vs], Vtab, none, none, PlaneEquation, Center, DegList) ->
-    Degrees = 0.0,
-    io:format("FirstVert: ~p~n", [array:get(Vert,Vtab)]),
-    Vpos = array:get(Vert, Vtab),
-    degrees_from_static_ray(Vs, Vtab, Vert, Degrees, Center, PlaneEquation, [{Vert,{Vpos,Degrees}}|DegList]);
-
-degrees_from_static_ray([Vert|Vs], Vtab, Vs0, _, Center, PlaneEquation, DegList) ->
-    DistV0Vi = e3d_vec:dist(array:get(Vert, Vtab), array:get(Vs0,Vtab)),
-    DistV0C = e3d_vec:dist(Center, array:get(Vs0,Vtab)),
-    DistViC = e3d_vec:dist(array:get(Vert, Vtab), Center),
-
-    CosAlpha = (DistV0C*DistV0C + DistViC*DistViC - DistV0Vi*DistV0Vi)/(2*DistV0C*DistViC),
-    Res = PlaneEquation(array:get(Vert, Vtab)),
-    %D = PlaneEquation(Center),
-    io:format("Res: ~p, D: ~p~n", [Res, 0]),
-    if
-        Res < 0 -> Degrees = (2 * math:pi() - math:acos(CosAlpha) ) * 180 / math:pi();
-        Res =:= 0 -> Degrees = 0;
-        true -> Degrees = math:acos(CosAlpha) * 180 / math:pi()
-    end,
-    Vpos = array:get(Vert, Vtab),
-    io:format("Degree: ~p~n", [Degrees]),
-    degrees_from_static_ray(Vs, Vtab, Vs0, Degrees, Center, PlaneEquation, [{Vert,{Vpos,Degrees}}|DegList]).
+%degrees_from_static_ray([], _, _, _, _, DegList) ->
+%    DegList;
+%degrees_from_static_ray([Vert|Vs], Vtab, Deg, Index, At, DegList) ->
+%    Degrees = Deg * (At-Index),
+%    Vpos = array:get(Vert, Vtab),
+%    degrees_from_static_ray(Vs, Vtab, Deg, Index, At+1.0, [{Vert,{Vpos,Degrees}}|DegList]).
 
 circularise_units({_, _, relative}) ->
     [diametric_factor,skip,percent];
@@ -734,15 +618,15 @@ make_circular_fun(Data, State) ->
             true ->
               make_circular_fun(Data, NewState);
             false ->
-              {Center,Ray,Nearest,Axis0,VertDegList} = Data,
+              {Center,Axis0,VertRayList} = Data,
               Axis = e3d_vec:neg(Axis0),
-              make_circular_fun({Center,Ray,Nearest,Axis,VertDegList}, NewState)
+              make_circular_fun({Center,Axis,VertRayList}, NewState)
           end;
       ([Dia,_,Percent|_], A) ->
-          {Center,Ray,Nearest,Axis,VertDegList} = Data,
-          lists:foldl(fun({V,{Vpos,Degrees}}, VsAcc) ->
-            [{V,make_circular(Center, Ray, Nearest, Axis, Degrees, Vpos, State, Percent, Dia)}|VsAcc]
-          end, A, VertDegList)
+          {Center,Axis,VertRayList} = Data,
+          lists:foldl(fun({V,{Vpos,Ray,Nearest}}, VsAcc) ->
+            [{V,make_circular(Center, Ray, Nearest, Axis, Vpos, State, Percent, Dia)}|VsAcc]
+          end, A, VertRayList)
     end.
 
 %%%% Arc Main Functions
@@ -815,11 +699,11 @@ rotation_amount(reverse, Deg, Index) -> -Deg * Index.
 %%%% Closed Loop. Calculate the final position of each vertex (NewPos).
 %%%% Measure the distance between NewPos and the Center (Factor). Move the
 %%%% vertex towards the NewPos by a distance of the drag Dist * Factor.
-make_circular(_Center, _Ray, _Nearest, _Axis, _Deg, Vpos, _State, 0.0, 0.0) -> Vpos;
-make_circular(Center, Ray, Nearest, Plane, Deg, Vpos, {Flatten,_,Mode}, Percent, Dia) ->
-    Pos0 = static_pos(Mode, Center, Ray, Nearest, Dia),
-    Pos1 = rotate(Pos0, Plane, Center, Deg),
-    Pos2 = flatten(Flatten, Pos1, Vpos, Plane),
+make_circular(_Center, _Ray, _Nearest, _Axis, Vpos, _State, 0.0, 0.0) -> Vpos;
+make_circular(Center, Ray, Nearest, Plane, Vpos, {Flatten,_,Mode}, Percent, Dia) ->
+    Pos0 = static_pos(Mode, Center, Ray, Nearest, Dia), %just pos
+    %Pos1 = rotate(Pos0, Plane, Center, Deg),
+    Pos2 = flatten(Flatten, Pos0, Vpos, Plane),
     Norm = e3d_vec:sub(Pos2, Vpos),
     e3d_vec:add(Vpos, e3d_vec:mul(Norm, Percent)).
 
@@ -834,9 +718,7 @@ angle_and_point(Angle0, Opp, Index, NumVs, Hinge, Cross) ->
     RotPoint = e3d_vec:add(Hinge, e3d_vec:mul(Cross, Adj)),
     {RotationAmount, RotPoint}.
 
-static_pos(relative, Center, Ray, Nearest, Dia) ->
-    e3d_vec:add(Center, e3d_vec:mul(Ray, Nearest*Dia));
-static_pos(absolute, Center, Ray, _Nearest, Dia) ->
+static_pos(_, Center, Ray, _Nearest, Dia) ->
     e3d_vec:add(Center, e3d_vec:mul(Ray, Dia/2)).
 
 flatten(true, Pos, _Vpos, _Plane) -> Pos;
