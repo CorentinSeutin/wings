@@ -641,13 +641,13 @@ arc(Vpos, Index, {CwNorm, _, Opp, Plane0, Pos, Hinge, NumVs},
     Vec = e3d_vec:sub(Pos2, Vpos),
     e3d_vec:add(Vpos, e3d_vec:mul(Vec, Percent));
 
-arc(Vpos, Index, {CwNorm, _, _, Plane0, Pos, Hinge, NumVs},
+arc(Vpos, _, {CwNorm, _, _, Plane0, Pos, _, _},
         {Flatten,Orientation,_}, Percent, 180.0) ->
     Plane = reverse_norm(CwNorm, Plane0, Orientation),
-    Deg = 180.0 / NumVs,
-    RotationAmount = Deg * Index,
-    Pos1 = rotate(Pos, Plane, Hinge, RotationAmount),
-    Pos2 = flatten(Flatten, Pos1, Vpos, Plane),
+    %Deg = 180.0 / NumVs,
+    %RotationAmount = Deg * Index,
+    %Pos1 = rotate(Pos, Plane, Hinge, RotationAmount),
+    Pos2 = flatten(Flatten, Pos, Vpos, Plane),
     Norm = e3d_vec:sub(Pos2, Vpos),
     e3d_vec:add(Vpos, e3d_vec:mul(Norm, Percent));
 
