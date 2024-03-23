@@ -172,7 +172,7 @@ command({scale,Type}, St) ->
 command(crease, St) ->
     ?SLOW(wings_extrude_edge:crease(St));
 command(smooth, St) ->
-    ?SLOW(wings_extrude_edge:crease(St));
+    ?SLOW(wings_smooth:smooth(St));
 command(vertex_color, St) ->
     wings_color:choose(fun(Color) ->
 			       set_color(Color, St)
