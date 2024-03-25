@@ -631,7 +631,8 @@ make_circular_fun(Data, State) ->
 
 %%%% Arc Main Functions
 arc(Vpos, _Index, _Data, _State, 0.0, 0.0) -> Vpos;
-arc(Vpos, Index, {CwNorm, _, Opp, Plane0, Pos, Hinge, NumVs},
+%(Opp, NumVs, Hinge, Pos, CwNorm, Plane0) in Data, (Orientation) in State, Indexs
+arc(Vpos, Index, {CwNorm, _, Opp, Plane0, Pos, Hinge, NumVs}, 
         {Flatten,Orientation,_}, Percent, 0.0) ->
     Segment = (Opp * 2) / NumVs,
     ChordNorm = e3d_vec:norm(e3d_vec:sub(Hinge, Pos)),
@@ -641,9 +642,12 @@ arc(Vpos, Index, {CwNorm, _, Opp, Plane0, Pos, Hinge, NumVs},
     Vec = e3d_vec:sub(Pos2, Vpos),
     e3d_vec:add(Vpos, e3d_vec:mul(Vec, Percent));
 
-arc(Vpos, _, {CwNorm, _, _, Plane0, Pos, _, _},
+arc(Vpos, _, {CwNorm, _, _, Plane0, Pos, _Hinge, _NumVs},
         {Flatten,Orientation,_}, Percent, 180.0) ->
     Plane = reverse_norm(CwNorm, Plane0, Orientation),
+    
+    %Pos0 = static_pos(Center, Ray, Dia)
+    
     %Deg = 180.0 / NumVs,
     %RotationAmount = Deg * Index,
     %Pos1 = rotate(Pos, Plane, Hinge, RotationAmount),
@@ -651,13 +655,13 @@ arc(Vpos, _, {CwNorm, _, _, Plane0, Pos, _, _},
     Norm = e3d_vec:sub(Pos2, Vpos),
     e3d_vec:add(Vpos, e3d_vec:mul(Norm, Percent));
 
-arc(Vpos, Index, {CwNorm, Cross0, Opp, Plane0, Pos, Hinge, NumVs},
-        {Flatten,Orientation,_}, Percent, Angle) ->
+arc(Vpos, _, {CwNorm, _Cross0, _Opp, Plane0, Pos, _Hinge, _NumVs},
+        {Flatten,Orientation,_}, Percent, _Angle) ->
     Plane = reverse_norm(CwNorm, Plane0, Orientation),
-    Cross = reverse_norm(CwNorm, Cross0, Orientation),
-    {Deg, RotPoint} = angle_and_point(Angle, Opp, Index, NumVs, Hinge, Cross),
-    Pos1 = rotate(Pos, Plane, RotPoint, Deg),
-    Pos2 = flatten(Flatten, Pos1, Vpos, Plane),
+    %Cross = reverse_norm(CwNorm, Cross0, Orientation),
+    %{Deg, RotPoint} = angle_and_point(Angle, Opp, Index, NumVs, Hinge, Cross),
+    %Pos1 = rotate(Pos, Plane, RotPoint, Deg),
+    Pos2 = flatten(Flatten, Pos, Vpos, Plane),
     Norm = e3d_vec:sub(Pos2, Vpos),
     e3d_vec:add(Vpos, e3d_vec:mul(Norm, Percent)).
 
@@ -700,32 +704,19 @@ rotation_amount(reverse, Deg, Index) -> -Deg * Index.
 %%%% Measure the distance between NewPos and the Center (Factor). Move the
 %%%% vertex towards the NewPos by a distance of the drag Dist * Factor.
 make_circular(_Center, _Ray, _Nearest, _Axis, Vpos, _State, 0.0, 0.0) -> Vpos;
-make_circular(Center, Ray, Nearest, Plane, Vpos, {Flatten,_,Mode}, Percent, Dia) ->
-    Pos0 = static_pos(Mode, Center, Ray, Nearest, Dia), %just pos
-    %Pos1 = rotate(Pos0, Plane, Center, Deg),
+make_circular(Center, Ray, _Nearest, Plane, Vpos, {Flatten,_,_Mode}, Percent, Dia) ->
+    Pos0 = static_pos(Center, Ray, Dia),
     Pos2 = flatten(Flatten, Pos0, Vpos, Plane),
     Norm = e3d_vec:sub(Pos2, Vpos),
     e3d_vec:add(Vpos, e3d_vec:mul(Norm, Percent)).
 
-%%%% Utilities
-angle_and_point(Angle0, Opp, Index, NumVs, Hinge, Cross) ->
-    Angle = 90.0 - (Angle0/2.0),
-    %% Erlang trigonomic inputs have to be converted from Degrees to Radians
-    Radians = (math:pi()/(180.0/Angle)),
-    Adj = math:tan(Radians) * Opp,
-    Deg = (180.0 - (Angle * 2)) / NumVs,
-    RotationAmount = Deg * Index,
-    RotPoint = e3d_vec:add(Hinge, e3d_vec:mul(Cross, Adj)),
-    {RotationAmount, RotPoint}.
-
-static_pos(_, Center, Ray, _Nearest, Dia) ->
+static_pos(Center, Ray, Dia) ->
     e3d_vec:add(Center, e3d_vec:mul(Ray, Dia/2)).
 
 flatten(true, Pos, _Vpos, _Plane) -> Pos;
 flatten(false, Pos, Vpos, Plane) -> intersect_vec_plane(Pos, Vpos, Plane).
 
 rotate(Vpos, Axis, {Cx,Cy,Cz}, Angle) ->
-    %% return new position as {x,y,z}
     A0 = e3d_mat:translate(Cx, Cy, Cz),
     A1 = e3d_mat:mul(A0, e3d_mat:rotate(Angle, Axis)),
     A2 = e3d_mat:mul(A1, e3d_mat:translate(-Cx, -Cy, -Cz)),
