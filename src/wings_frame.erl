@@ -76,7 +76,8 @@ top_menus(WorkAround) ->
      {?__(3,"View"),  view,wings_view:menu()},
      {?__(4,"Select"),select,wings_sel_cmd:menu()},
      {?__(5,"Tools"), tools, wings:tools_menu()},
-     {WinStr,window,wings:window_menu()}
+     {WinStr,window,wings:window_menu()},
+     {?__(8,"Test"), test, wings:test_menu()}
      |Tail].
 
 make_win(Title, Opts) ->

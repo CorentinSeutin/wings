@@ -21,7 +21,7 @@
 -export([highlight_aim_setup/1]).
 -export([register_postdraw_hook/3,unregister_postdraw_hook/2]).
 -export([info_line/0, command_name/2]).
--export([edit_menu/0, tools_menu/0, window_menu/0]).
+-export([edit_menu/0, tools_menu/0, window_menu/0, test_menu/0]).
 
 -export([geom_title/1]).
 
@@ -865,6 +865,10 @@ command_1({window,tweak_palette}, St) ->
     wings_tweak_win:window(axis_constraint, St),
     keep;
 
+%%Test menu
+command_1({test,Command}, St) ->
+    wings_test:command(Command, St);
+
 %% Body menu.
 command_1({body,Cmd}, St) ->
     wings_body:command(Cmd, St);
@@ -1057,6 +1061,10 @@ window_menu() ->
 	     {?__(8,"New Geometry Window"),geom_viewer, ?__(9,"Open a new Geometry window")},
 	     {?__(10,"Log Window"),console,?__(11,"Open a log window for information messages")}]
     end.
+
+test_menu() ->
+    [{?__(1,"Basic Settings Window..."), basic_settings_window, ?__(2, "Open a basic settings window")},
+     {?__(3,"Nothing"), nothing, ?__(4, "Opens nothing")}].
 
 tool_dirs(Tool) ->
     Help = case Tool of
