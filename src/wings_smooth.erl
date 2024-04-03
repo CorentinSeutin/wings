@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 -module(wings_smooth).
 -export([smooth/1]).
 
@@ -97,5 +97,3 @@ modifier_positions([_ | RestePositions]) ->
 %%            %% If vertex doesn't have exactly two neighbors, return original position
 %%            {X, Y, Z}
 %%    end.
-=======
->>>>>>> f3476cf0faf1e30295cafafe51ac2b089701b8cf
