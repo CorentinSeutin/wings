@@ -51,12 +51,18 @@ make_polyhedron(Arg, _) ->
     {new_shape, ObjName, Faces, Vs}.
 
 dialog() ->
-    BaseFlag = get_pref(baseflag, tetrahedron),
     TruncatedFlag = get_pref(truncated, false),
-    NormalizedFlag = get_pref(normalized, false),
+    NormalizedFlag = get_pref(normalized, true),
     [
-        {vradio,
-            [{?__(1,"Tetrahedron"), tetrahedron},
+        {vframe,[polyhedron_types()],[{title,?__(1,"Type")}]},
+        {?__(2,"Truncated"), TruncatedFlag, [{key, truncated}]},
+        {?__(3,"Normalized"), NormalizedFlag, [{key, normalized}]},
+     wings_shapes:transform_obj_dlg()
+    ].
+
+polyhedron_types() ->
+    BaseFlag = get_pref(baseflag, tetrahedron),
+    {menu,[{?__(1,"Tetrahedron"), tetrahedron},
             {?__(2,"Hexahedron"), hexahedron},
 	        {?__(3,"Octahedron"), octahedron},
 	        {?__(4,"Icosahedron"), icosahedron},
@@ -68,24 +74,9 @@ dialog() ->
             {?__(10,"Icosadodecahedron"), icosadodecahedron},
 	        {?__(11,"Rhombi Icosadodecahedron"), rhombi_icosadodecahedron},
             {?__(12,"Left Snub Icosadodecahedron"), left_snub_icosadodecahedron},
-            {?__(13,"Right Snub Icosadodecahedron"), right_snub_icosadodecahedron}
-            ], 
-            BaseFlag,
-	        [{key,baseflag}, {title, ?__(14,"Type")}]},
-
-        {hradio, [{?__(15,"Yes"), true},
-	       {?__(16,"No"), false}],
-	       TruncatedFlag,
-	       [{key,truncated}, {title, ?__(17,"Truncated")}]},
-        
-        {hradio, [{?__(18,"Yes"), true},
-	       {?__(19,"No"), false}],
-	       NormalizedFlag,
-	       [{key,normalized}, {title, ?__(20,"Normalized")}]},
-
-     wings_shapes:transform_obj_dlg()
-    ].
-
+            {?__(13,"Right Snub Icosadodecahedron"), right_snub_icosadodecahedron}],
+     BaseFlag,
+     [{key,baseflag}]}.
 
 
 polyhedron_main(BaseFlag, TruncatedFlag, NormalizedFlag) ->
