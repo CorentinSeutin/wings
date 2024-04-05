@@ -43,29 +43,46 @@ smooth(St0) ->
 %%    end,
 %%    lists:foldl(MF, We, Edges).
 
+%% Return Vtab with the position of V updated depending on their position in We
+%% /!\ TEMPORARY /!\ In that instance NewPos = PosV + 5 
+%% /!\ TODO /!\ In that instance NewPos = NeiboursPos / 4 + Pos / 2 (?)
+update_position(V, #we{vp=Vtab0}, AccVtab) ->
+    %io:format("Contenu de V : ~p~n", [V]),
+    {X, Y, Z} = array:get(V, Vtab0),
+    NewPos = {X + 5.0, Y + 5.0, Z + 5.0},
+    Vtab = array:set(V, NewPos, AccVtab),
+    Vtab.
+
 smooth_straight(Vs, #we{vp=Vtab}=We) ->
     io:format("Contenu de Vtab : ~p~n", [Vtab]),
     io:format("Contenu de Vs : ~p~n", [Vs]),
-	Positions = [array:get(V, Vtab) || V <- Vs],
-    io:format("Contenu de Positions : ~p~n", [Positions]),
-    PositionsModifiees = modifier_positions(Positions),
-    io:format("Contenu de Positions : ~p~n", [PositionsModifiees]),
+	%Positions = [array:get(V, Vtab) || V <- Vs],
+    %io:format("Contenu de Positions : ~p~n", [Positions]),
+    %PositionsModifiees = modifier_positions(Positions),
+    %io:format("Contenu de Positions : ~p~n", [PositionsModifiees]),
 %%	Plane = e3d_vec:normal(PositionsModifiees),
 %%	wings_vertex:flatten(Vs, Plane, We).
-    NewCoord = [array:set(7, {5.0, 5.0, 5.0}, Vtab)],
-    io:format("Contenu de We : ~p~n", [We]),
-    We1 = We#we{vp=NewCoord},
-    io:format("Contenu de We1 : ~p~n", [We1]),
-    We1.
-    
 
-modifier_positions([]) ->
-    [];
-modifier_positions([_ | RestePositions]) ->
-    NouveauX = 5.0,
-    NouveauY = 5.0,
-    NouveauZ = 5.0,
-    [{NouveauX, NouveauY, NouveauZ} | RestePositions].
+    %% Pour chaque V de Vs -> update_position(V, Acc) où Acc = Vtab 
+    %% - *update_position* change revoie un nouveau Vtab avec la position de V modifiée
+    %% - comme Vtab change à chaque interation, les changement dans update_position sont fait en 
+    %% fonction de We (soit en fonction des position de départ)
+    NewVtab = lists:foldl(fun(V, Acc) -> update_position(V, We, Acc) end, Vtab, Vs),
+
+    %io:format("Contenu de We : ~p~n", [We]),
+    We1 = We#we{vp=NewVtab},
+    %io:format("Contenu de We1 : ~p~n", [We1]),
+    We1.
+
+
+
+%modifier_positions([]) ->
+%    [];
+%modifier_positions([_ | RestePositions]) ->
+%    NouveauX = 5.0,
+%    NouveauY = 5.0,
+%    NouveauZ = 5.0,
+%    [{NouveauX, NouveauY, NouveauZ} | RestePositions].
 
 %%%% Check if a vertex is an endpoint of the edge set
 %%is_endpoint(V1, V2, Edges, We) ->
