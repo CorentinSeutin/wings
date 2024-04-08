@@ -71,14 +71,8 @@ smooth(St0) ->
             %Loop
             true -> smooth_loop(Vs, We0);
             %Not a loop
-            _ -> smooth_loop(Vs, We0) %smooth_segment(Vs, We0)
+            _ -> smooth_segment(Vs, We0)
         end
-
-        %case wings_edge_loop:edge_loop_vertices(Edges,We0) of
-        %    [Vs] -> We = smooth_straight(Vs, We0);
-        %    _ -> We = We0
-        %end,
-        %We
     end, St0).
 
 smooth_loop(Vs, #we{vp=Vtab0}=We) -> 
@@ -86,20 +80,13 @@ smooth_loop(Vs, #we{vp=Vtab0}=We) ->
     io:format("Contenu de la liste Edges : ~p~n", [Vtab0]),
     V0 = lists:nth(1,Vs),
     V1 = lists:nth(2,Vs),
-    %V2 = lists:nth(3,Vs),
-    %Pos0 = array:get(V0, Vtab0),
-    %Pos1 = array:get(V1, Vtab0),
-    %Pos2 = array:get(V2, Vtab0),
-
-    %NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos0,4), e3d_vec:divide(Pos2,4) ), e3d_vec:divide(Pos1,2)),
-    %Acc = array:set(V1, NewPos, Vtab0),
     T = lists:delete(V0, Vs),
-    Vtab = smooth(T, V0, We, Vtab0, V1),
+    Vtab = smooth_loop_2(T, V0, We, Vtab0, V1),
 
     io:format("Contenu de la liste Edges : ~p~n", [Vtab]),
     We#we{vp=Vtab}.
 
-smooth(Vs, V0, #we{vp=Vtab0}=We, Acc0, First) ->
+smooth_loop_2(Vs, V0, #we{vp=Vtab0}=We, Acc0, First) ->
     print_list(Vs, "Vs"),
     case Vs of 
         [V1] ->
@@ -114,9 +101,36 @@ smooth(Vs, V0, #we{vp=Vtab0}=We, Acc0, First) ->
             Pos3 = array:get(V2, Vtab0),
             NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos1,4), e3d_vec:divide(Pos3,4) ), e3d_vec:divide(Pos2,2)),  
             Acc = array:set(V1, NewPos, Acc0),
-            smooth([V2]++T, V1, We, Acc, First)
+            smooth_loop_2([V2]++T, V1, We, Acc, First)
     end.
 
+smooth_segment(Vs, #we{vp=Vtab0}=We) -> 
+    print_list(Vs, "Vs"),
+    io:format("Contenu de la liste Edges : ~p~n", [Vtab0]),
+    V0 = lists:nth(1,Vs),
+    T = lists:delete(V0, Vs),
+    Vtab = smooth_segment_2(T, V0, We, Vtab0),
+
+    io:format("Contenu de la liste Edges : ~p~n", [Vtab]),
+    We#we{vp=Vtab}.
+
+smooth_segment_2(Vs, V0, #we{vp=Vtab0}=We, Acc0) ->
+    print_list(Vs, "Vs"),
+    case Vs of 
+        [V1,V2] ->
+            Pos1 = array:get(V0, Vtab0),
+            Pos2 = array:get(V1, Vtab0),
+            Pos3 = array:get(V2, Vtab0),
+            NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos1,4), e3d_vec:divide(Pos3,4) ), e3d_vec:divide(Pos2,2)),  
+            array:set(V1, NewPos, Acc0);
+        [V1,V2|T] ->
+            Pos1 = array:get(V0, Vtab0),
+            Pos2 = array:get(V1, Vtab0),
+            Pos3 = array:get(V2, Vtab0),
+            NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos1,4), e3d_vec:divide(Pos3,4) ), e3d_vec:divide(Pos2,2)),  
+            Acc = array:set(V1, NewPos, Acc0),
+            smooth_segment_2([V2]++T, V1, We, Acc)
+    end.
 
 %smooth_segment(Vs) -> 
 
