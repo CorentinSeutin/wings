@@ -5,57 +5,61 @@
 -include("wings.hrl").
 -import(lists, [foldl/3,reverse/1]).
 
+print_list(List,String) ->
+    io:format("~s: ",[String]),
+    print_list2(List).
+print_list2([]) ->
+    io:format("~n"),
+    ok;
+print_list2([Head | Tail]) ->
+    io:format("~w-", [Head]),
+    print_list2(Tail).
+
 find_next_vertex(V,List,We) ->
     case List of
         [] -> {[],-1};
         [Edge|T] -> 
             [V0,V1] = wings_vertex:from_edges(gb_sets:from_list([Edge]),We),
             if 
-                V0 =:= V -> {[V0,V1],V1};
-                V1 =:= V -> {[V0,V1],V0};
-                true -> find_next_vertex(V,T,We)
+                V0 =:= V -> %io:format("COUCOU1~n"),
+                            {Edge,V1};
+                V1 =:= V -> {Edge,V0};
+                true -> %io:format("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO~n"),
+                    find_next_vertex(V,T,We)
             end
     end.
 
 sort_edge(Edges, We) ->
     EdgesList = gb_sets:to_list(Edges),
-    io:format("Contenu de la liste TAIL : ~p~n", [EdgesList]),
     sort_edge_1(EdgesList, We,[]).
 
 sort_edge_1(EdgesList, We, Acc) ->
-                    io:format("Contenu de la liste Edge : ~p~n", [length(EdgesList)]),
     case EdgesList of
         [] -> Acc;
-        [Edge0] -> 
-            [V0,V1] = wings_vertex:from_edges(gb_sets:from_list([Edge0]),We),
-            io:format("Contenu de la liste Edge : ~p~n", [[V0,V1]]),
-            case Acc of
-                [] -> [V0,V1];
-                _ -> case lists:last(Acc) =:= V0 of
-                        true -> Acc++[V1];
-                        _ -> Acc++[V0]
-                    end
-            end;
         [Edge0|T] -> 
             [V0,V1] = wings_vertex:from_edges(gb_sets:from_list([Edge0]),We),
+            print_list(EdgesList,"Edges"),
             io:format("Contenu de la liste Edge : ~p~n", [[V0,V1]]),
             case Acc of
                 [] -> sort_edge_1(T, We,[V0,V1]);
                 _ -> 
-                    {Edge,V} = find_next_vertex(lists:last(Acc),T,We),
-                    case V of 
-                        -1 -> 
-                            Acc;
-                        _ ->
-                            L = lists:delete(Edge, T),
-                            sort_edge_1(L, We, Acc++[V])
-                    end
+                    sort_edge_2(EdgesList, We, Acc)
             end
     end.
 
-
-        
-            %sort_edge_1(EdgesList, Acc::to_vertices(Value,We), We)
+sort_edge_2(List,We,Acc) ->
+    {Edge,V} = find_next_vertex(lists:last(Acc),List,We),
+    case V of 
+        -1 -> 
+            Acc;
+        _ ->
+            print_list(wings_vertex:from_edges(gb_sets:from_list([Edge]),We),"Edge"),
+            print_list(List,"List before"),
+            L = lists:delete(Edge, List),
+            print_list(L,"List after"),
+            print_list(Acc,"Acc"),
+            sort_edge_2(L, We, Acc++[V])
+    end.
 
 %% Function to smooth edges
 smooth(St0) ->
@@ -65,8 +69,7 @@ smooth(St0) ->
 
         case lists:last(Vs) =:= lists:nth(1,Vs) of
             %Loop
-            true -> Vs0 = Vs++[lists:nth(1,Vs)],
-                    smooth_loop(Vs0, We0);
+            true -> smooth_loop(Vs, We0);
             %Not a loop
             _ -> smooth_loop(Vs, We0) %smooth_segment(Vs, We0)
         end
@@ -79,37 +82,39 @@ smooth(St0) ->
     end, St0).
 
 smooth_loop(Vs, #we{vp=Vtab0}=We) -> 
+    print_list(Vs, "Vs"),
     io:format("Contenu de la liste Edges : ~p~n", [Vtab0]),
     V0 = lists:nth(1,Vs),
     V1 = lists:nth(2,Vs),
-    VN = lists:nth(length(Vs) -1,Vs),
-    Pos0 = array:get(V0, Vtab0),
-    Pos1 = array:get(V1, Vtab0),
-    PosN = array:get(VN, Vtab0),
+    %V2 = lists:nth(3,Vs),
+    %Pos0 = array:get(V0, Vtab0),
+    %Pos1 = array:get(V1, Vtab0),
+    %Pos2 = array:get(V2, Vtab0),
 
-    NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos1,4), e3d_vec:divide(PosN,4) ), e3d_vec:divide(Pos0,2)),
-    Acc = array:set(V0, NewPos, Vtab0),
+    %NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos0,4), e3d_vec:divide(Pos2,4) ), e3d_vec:divide(Pos1,2)),
+    %Acc = array:set(V1, NewPos, Vtab0),
     T = lists:delete(V0, Vs),
-    Vtab = smooth(T, V0, We, Acc),
+    Vtab = smooth(T, V0, We, Vtab0, V1),
 
     io:format("Contenu de la liste Edges : ~p~n", [Vtab]),
     We#we{vp=Vtab}.
 
-smooth(Vs, V0, #we{vp=Vtab0}=We, Acc0) ->
+smooth(Vs, V0, #we{vp=Vtab0}=We, Acc0, First) ->
+    print_list(Vs, "Vs"),
     case Vs of 
-        [V1,V2,V3] ->
-            Pos1 = array:get(V1, Vtab0),
-            Pos2 = array:get(V2, Vtab0),
-            Pos3 = array:get(V3, Vtab0),
+        [V1] ->
+            Pos1 = array:get(V0, Vtab0),
+            Pos2 = array:get(V1, Vtab0),
+            Pos3 = array:get(First, Vtab0),
             NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos1,4), e3d_vec:divide(Pos3,4) ), e3d_vec:divide(Pos2,2)),  
-            array:set(V2, NewPos, Acc0);
+            array:set(V1, NewPos, Acc0);
         [V1,V2|T] ->
             Pos1 = array:get(V0, Vtab0),
             Pos2 = array:get(V1, Vtab0),
             Pos3 = array:get(V2, Vtab0),
             NewPos =  e3d_vec:add(e3d_vec:add(e3d_vec:divide(Pos1,4), e3d_vec:divide(Pos3,4) ), e3d_vec:divide(Pos2,2)),  
             Acc = array:set(V1, NewPos, Acc0),
-            smooth([V2]++T, V1, We, Acc)
+            smooth([V2]++T, V1, We, Acc, First)
     end.
 
 
