@@ -54,10 +54,8 @@ find_next_vertex([Edge|T]=_Egdes, V, We) ->
     Vs = wings_vertex:from_edges(gb_sets:from_list([Edge]),We),
     case Vs of 
         [V0, V1] when V0 =:= V -> 
-            %io:format("V1 is next~n"),
             {Edge,V1};
         [V0, V1] when V1 =:= V -> 
-            %io:format("V0 is next~n"),
             {Edge,V0};
         _ -> find_next_vertex(T,V,We)
     end.
@@ -66,7 +64,6 @@ find_next_vertex([Edge|T]=_Egdes, V, We) ->
 smooth(St0) ->
     wings_sel:map(fun(Edges, We0) ->
         Vs = sorted_vertex_list(Edges, We0),
-        io:format("Contenu de la liste Vs : ~p~n", [Vs]),
 
         case lists:last(Vs) =:= lists:nth(1,Vs) of
             true -> smooth_loop(Vs, We0); % It's a loop
