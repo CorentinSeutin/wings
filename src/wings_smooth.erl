@@ -86,34 +86,34 @@ smooth_loop([], We) -> We;
 smooth_loop([H|T]=Vs, #we{vp=Vtab0}=We) ->
     %print_list(Vs, "Vs")
     Fist = lists:nth(2,Vs),
-    Vtab = smooth_loop(T, Vtab0, H, Fist, Vtab0),
+    Vtab = smooth_loop_1(T, Vtab0, H, Fist, Vtab0),
     We#we{vp=Vtab}.
 
-smooth_loop([],_,_,_,Acc) -> Acc; % never happens
-smooth_loop([Curr], Vtab, Prev, Next, Acc) ->
+smooth_loop_1([],_,_,_,Acc) -> Acc; % never happens
+smooth_loop_1([Curr], Vtab, Prev, Next, Acc) ->
     Pos = new_position(Prev, Curr, Next, Vtab),
     array:set(Curr, Pos, Acc);
-smooth_loop([Curr,Next|T], Vtab, Prev, First, Acc) ->
+smooth_loop_1([Curr,Next|T], Vtab, Prev, First, Acc) ->
     Pos = new_position(Prev, Curr, Next, Vtab),
     NewAcc = array:set(Curr, Pos, Acc),
-    smooth_loop([Next]++T, Vtab, Curr, First, NewAcc).
+    smooth_loop_1([Next]++T, Vtab, Curr, First, NewAcc).
     
 smooth_segment([],We) -> We;
 smooth_segment([H|T], #we{vp=Vtab0}=We) ->
     %print_list(Vs, "Vs")
-    Vtab = smooth_segment(T, Vtab0, H, Vtab0),
+    Vtab = smooth_segment_1(T, Vtab0, H, Vtab0),
     We#we{vp=Vtab}.
 
 %% Smooth function for a segment
-smooth_segment([],_,_,Acc) -> Acc; % never happens
-smooth_segment([_],_,_,Acc) -> Acc; % never happens
-smooth_segment([Curr,Next], Vtab, Prev, Acc) ->
+smooth_segment_1([],_,_,Acc) -> Acc; % never happens
+smooth_segment_1([_],_,_,Acc) -> Acc; % never happens
+smooth_segment_1([Curr,Next], Vtab, Prev, Acc) ->
     Pos = new_position(Prev, Curr, Next, Vtab),
     array:set(Curr, Pos, Acc);
-smooth_segment([Curr,Next|T], Vtab, Prev, Acc) ->
+smooth_segment_1([Curr,Next|T], Vtab, Prev, Acc) ->
     Pos = new_position(Prev, Curr, Next, Vtab),
     NewAcc = array:set(Curr, Pos, Acc),
-    smooth_segment([Next]++T, Vtab, Curr, NewAcc).
+    smooth_segment_1([Next]++T, Vtab, Curr, NewAcc).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SMOOTH V1 - TO REMOVE !!!!! %
