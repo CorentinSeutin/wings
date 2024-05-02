@@ -1,9 +1,9 @@
 %%
 %%  wpc_polyhedron.erl --
 %%
-%%     Geodesic Dome Plugin
+%%     Polyhedron
 %%
-%%  Copyright (c) 2003-2011 Anthony D'Agostino
+%%  Copyright (c) 2024 Iban Oyharcabal | Corentin Seutin
 %%
 %%  See the file "license.terms" for information on usage and redistribution
 %%  of this file, and for a DISCLAIMER OF ALL WARRANTIES.
