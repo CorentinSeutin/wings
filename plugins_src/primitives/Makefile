@@ -39,7 +39,8 @@ MODULES= \
 	wpc_spiral \
 	wpc_torus \
 	wpc_tt \
-	wpc_thread
+	wpc_thread \
+	wpc_polyhedron
 
 TARGET_FILES= $(MODULES:%=$(EBIN)/%.beam)
 
