@@ -36,7 +36,9 @@ menu(X, Y, St) ->
 	    {?__(5,"Extrude"),{extrude,Dir}},
 	    {?__(22,"Crease"),crease,
 	     ?__(23,"Extrusion commonly used for adding wrinkles to organic models")},
-	    separator,
+	    {?__(26,"Smooth"),smooth,
+	     ?__(27,"Smooth edges")},
+		separator,
 	    wings_menu_util:flatten(),
 	    separator,
 	    cut_line(St),
@@ -169,6 +171,8 @@ command({scale,Type}, St) ->
     wings_scale:setup(Type, St);
 command(crease, St) ->
     ?SLOW(wings_extrude_edge:crease(St));
+command(smooth, St) ->
+    wings_smooth:smooth(St);
 command(vertex_color, St) ->
     wings_color:choose(fun(Color) ->
 			       set_color(Color, St)
