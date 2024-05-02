@@ -77,7 +77,7 @@ static GLUhalfEdge *MakeEdge( GLUhalfEdge *eNext )
   eSym = &pair->eSym;
 
   /* Make sure eNext points to the first edge of the edge pair */
-  if( eNext->Sym < eNext ) { eNext = eNext->Sym; }
+  if( eNext->Sym < eNext ) { eNext = eNext->Sym; } 
 
   /* Insert in circular doubly-linked list before eNext.
    * Note that the prev pointer is stored in Sym->next.
