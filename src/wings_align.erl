@@ -220,6 +220,8 @@ put_obj_on_ground(We) ->
 %% @doc Scale selected object(s) uniformly until it's bounding box fits
 %% inside a cube going from the coordinates {-1,-1,-1} to {1,1,1} centered at the origin
 %% @spec unitize(St::st#) -> St# ?
+
+%% Iban Oyharcabal
 unitize(St) ->
     wings_sel:map(fun(_, We) -> unitize_obj(We) end, St).
 
